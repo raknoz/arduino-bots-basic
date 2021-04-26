@@ -1,2 +1,2 @@
 # arduino-bots-basic
-Here are exercises scripts for Arduino as part of a curse to learn about electronic with bots
+Here are exercises (scripts) for Arduino UNO as part of a online curse about electronic with bots.
