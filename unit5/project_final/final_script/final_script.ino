@@ -2,8 +2,9 @@
 #include <IRremoteInt.h>
 
 // Constants leds
-const int pinRed = A1;
-const byte pinGB = A2;
+const byte pinRed = A1;
+const byte pinBlue = A2;
+const byte pinGreen = A4;
 const byte pinTest = 13;
 const byte pinReceptor = 2;
 const byte pinWhite = 5;
@@ -18,10 +19,17 @@ const byte BIB = 11;
 const byte pinShoot = 7;
 const byte pinEcho = 12;
 
+// Constants Photo-sensor
+const int rightSensor = A3;
+const int leftSensor = A0;
+
 // Constants
-const byte distanceLimit = 10;
+const byte distanceLimit = 15;
 long timePulse;
 float dstMeasure; // Distance
+int rightSensorValue = 0;
+int leftSensorValue = 0;
+bool lightsByControl = false;
 
 void setup() {
   // Enabled data received and transfer by Serial Port
@@ -31,8 +39,9 @@ void setup() {
 
   //Config led pins
   pinMode(pinRed, OUTPUT);
-  pinMode(pinGB, OUTPUT); // Green and Blue
-  pinMode(pinWhite, OUTPUT);
+  pinMode(pinBlue, OUTPUT);
+  pinMode(pinGreen, OUTPUT);
+  pinMode(pinWhite, OUTPUT); // Front
 
   //Config wheels' pins
   pinMode(AIA, OUTPUT);
@@ -47,10 +56,11 @@ void setup() {
 
   // Initialize RGB led
   digitalWrite(pinRed, LOW);
-  digitalWrite(pinGB, LOW);
+  digitalWrite(pinBlue, LOW);
+  digitalWrite(pinGreen, LOW);
 
   // Initialize white front leds
-  analogWrite(pinRed, 0);
+  analogWrite(pinWhite, 0);
 
   // shutdown led
   digitalWrite(pinTest, LOW);
@@ -74,6 +84,7 @@ void loop() {
 
     switch (pressValue) {
       case 12: // Button 1
+        lightsByControl = true;
         turnOnFrontLights();
         break;
       case 24: // Button 2
@@ -107,6 +118,14 @@ void loop() {
     delay(200);
     moveStop();
     shutDownLed();
+  }
+
+  if (getPhotoSensorValue() > 700) {
+    turnOnFrontLights();
+  } else {
+    if (!lightsByControl) {
+      turnOffFrontLights();
+    }
   }
 }
 
@@ -170,6 +189,16 @@ float calculateDistance() {
   return 0.017 * pulseIn(pinEcho, HIGH);
 }
 
+int getPhotoSensorValue() {
+  rightSensorValue = analogRead(rightSensor);
+  delay(100);
+  leftSensorValue = analogRead(leftSensor);
+  delay(100);
+  // Darkness = 1024; Full light = 0
+
+  return (rightSensorValue + leftSensorValue) / 2;
+}
+
 /********************************/
 /*********** LEDS ***************/
 /********************************/
@@ -185,7 +214,8 @@ void sayHello() {
 
 //Turn on red Led
 void turnOnStopLed() {
-  digitalWrite(pinGB, LOW);
+  digitalWrite(pinBlue, LOW);
+  digitalWrite(pinGreen, LOW);
   for (byte t = 0; t < 3; t++) {
     digitalWrite(pinRed, HIGH);
     delay(150);
@@ -197,12 +227,14 @@ void turnOnStopLed() {
 //Turn on white Led
 void turnOnReverseLed() {
   digitalWrite(pinRed, HIGH);
-  digitalWrite(pinGB, HIGH);
+  digitalWrite(pinBlue, HIGH);
+  digitalWrite(pinGreen, HIGH);
 }
 
 void shutDownLed() {
   digitalWrite(pinRed, LOW);
-  digitalWrite(pinGB, LOW);
+  digitalWrite(pinBlue, LOW);
+  digitalWrite(pinGreen, LOW);
 }
 
 void turnOnFrontLights() {
@@ -210,6 +242,9 @@ void turnOnFrontLights() {
 }
 
 void turnOffFrontLights() {
+  if (lightsByControl) {
+    lightsByControl = false;
+  }
   setIntensityFrontLigth(0);
 }
 
